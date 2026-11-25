@@ -1,0 +1,15 @@
+# Global owners
+* @3bdelrahmanashraf
+
+# Core modules
+/src/core/ @3bdelrahmanashraf
+/src/auth/ @3bdelrahmanashraf
+/src/github/ @3bdelrahmanashraf
+/src/storage/ @3bdelrahmanashraf
+/src/commands/ @3bdelrahmanashraf
+/src/types/ @3bdelrahmanashraf
+
+# Configuration
+/package.json @3bdelrahmanashraf
+/tsconfig.json @3bdelrahmanashraf
+/eslint.config.js @3bdelrahmanashraf
