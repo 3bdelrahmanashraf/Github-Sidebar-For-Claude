@@ -1,0 +1,58 @@
+{
+  "name": "github-sidebar-claude",
+  "version": "0.1.0",
+  "description": "GitHub Sidebar for Claude - Repository dashboard and control from within Claude",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext ts",
+    "format": "prettier --write src",
+    "typecheck": "tsc --noEmit",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "claude",
+    "plugin",
+    "github",
+    "sidebar",
+    "dashboard",
+    "repository"
+  ],
+  "author": "3bdelrahmanashraf",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3bdelrahmanashraf/github-sidebar-claude.git"
+  },
+  "bugs": {
+    "url": "https://github.com/3bdelrahmanashraf/github-sidebar-claude/issues"
+  },
+  "homepage": "https://github.com/3bdelrahmanashraf/github-sidebar-claude#readme",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.0.0",
+    "@octokit/graphql": "^7.0.0",
+    "better-sqlite3": "^11.0.0",
+    "keytar": "^7.9.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^20.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  }
+}
