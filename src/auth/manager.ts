@@ -2,12 +2,25 @@
  * Authentication manager for GitHub accounts
  */
 
-import * as keytar from 'keytar';
 import type { GitHubAccount, AccountType } from '../types';
 import { getConfig, addAccount, updateAccount, removeAccount as configRemoveAccount } from '../core/config';
 import { createGitHubClient } from '../github/client';
 
 const SERVICE_NAME = 'github-sidebar-claude';
+
+let keytarModule: typeof import('keytar') | null = null;
+let keytarAvailable = false;
+
+async function loadKeytar(): Promise<void> {
+  if (keytarAvailable) return;
+  try {
+    keytarModule = await import('keytar');
+    keytarAvailable = true;
+  } catch {
+    keytarAvailable = false;
+    console.warn('keytar not available - token storage will use config file (less secure)');
+  }
+}
 
 export interface AuthResult {
   success: boolean;
@@ -71,7 +84,12 @@ export async function addGitHubAccount(
 
   // Store token securely
   const accountId = `${type}-${username.toLowerCase()}`;
-  await keytar.setPassword(SERVICE_NAME, accountId, token);
+  await loadKeytar();
+  if (keytarAvailable && keytarModule) {
+    await keytarModule.setPassword(SERVICE_NAME, accountId, token);
+  } else {
+    console.warn('Token stored in config file (less secure) - install keytar for secure storage');
+  }
 
   // Add to config
   const account = addAccount({
@@ -100,18 +118,28 @@ export async function removeGitHubAccount(accountId: string): Promise<boolean> {
   if (!account) return false;
 
   // Remove from keytar
-  await keytar.deletePassword(SERVICE_NAME, accountId);
+  await loadKeytar();
+  if (keytarAvailable && keytarModule) {
+    await keytarModule.deletePassword(SERVICE_NAME, accountId);
+  }
 
   // Remove from config
   return configRemoveAccount(accountId);
 }
 
 export async function getStoredToken(accountId: string): Promise<string | null> {
-  return keytar.getPassword(SERVICE_NAME, accountId);
+  await loadKeytar();
+  if (keytarAvailable && keytarModule) {
+    return keytarModule.getPassword(SERVICE_NAME, accountId);
+  }
+  return null;
 }
 
 export async function setStoredToken(accountId: string, token: string): Promise<void> {
-  await keytar.setPassword(SERVICE_NAME, accountId, token);
+  await loadKeytar();
+  if (keytarAvailable && keytarModule) {
+    await keytarModule.setPassword(SERVICE_NAME, accountId, token);
+  }
 }
 
 export async function refreshAccountToken(accountId: string, newToken: string): Promise<AuthResult> {
@@ -170,6 +198,9 @@ export async function checkAllTokens(): Promise<Map<string, TokenValidationResul
 }
 
 export async function migrateTokenToKeytar(accountId: string, token: string): Promise<void> {
-  await keytar.setPassword(SERVICE_NAME, accountId, token);
+  await loadKeytar();
+  if (keytarAvailable && keytarModule) {
+    await keytarModule.setPassword(SERVICE_NAME, accountId, token);
+  }
   // Token removed from config automatically on next save
 }

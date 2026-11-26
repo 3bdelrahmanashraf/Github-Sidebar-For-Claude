@@ -155,12 +155,7 @@ export * from './github/client';
 export { initDatabase, closeDatabase, upsertRepository, upsertRepositories, getRepositories, getRepository, deleteRepository, getRepositoriesByLanguage, searchRepositories, getRepositoryCount, getLanguages, getTopics, upsertAccount, getAccount as getStoredAccount, getAllAccounts, deleteAccount, recordSync, getSyncHistory, setMetadata, getMetadata, cleanupOldCache, vacuum } from './storage/database';
 export * from './commands';
 
-// CLI entry point
-if (import.meta.url === `file://${process.argv[1]}`) {
-  void runCLI();
-}
-
-async function runCLI(): Promise<void> {
+export async function runCLI(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0];
 
