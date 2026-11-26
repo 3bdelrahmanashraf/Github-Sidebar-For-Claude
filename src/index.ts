@@ -10,7 +10,7 @@ import { loadConfig, ensureConfigDir } from './core/config';
 import { initDatabase, closeDatabase } from './storage/database';
 import { startPeriodicSync } from './core/sync';
 import { validateToken, getStoredToken } from './auth/manager';
-import type { PluginConfig, GitHubAccount, PluginManifest } from './types';
+import type { PluginConfig, PluginManifest } from './types';
 
 // Plugin manifest for Claude
 export const manifest: PluginManifest = {
@@ -117,7 +117,7 @@ export async function initialize(): Promise<PluginConfig> {
   await startPeriodicSync();
 
   initialized = true;
-  console.log('GitHub Sidebar for Claude initialized');
+  console.warn('GitHub Sidebar for Claude initialized');
   return config;
 }
 
@@ -131,7 +131,7 @@ export async function shutdown(): Promise<void> {
   }
   closeDatabase();
   initialized = false;
-  console.log('GitHub Sidebar for Claude shut down');
+  console.warn('GitHub Sidebar for Claude shut down');
 }
 
 export function onShutdown(handler: () => void | Promise<void>): void {
@@ -202,7 +202,7 @@ export async function runCLI(): Promise<void> {
     }
 
     if (result.success) {
-      if (result.output) console.log(result.output);
+      if (result.output) console.warn(result.output);
       process.exit(0);
     } else {
       console.error(result.error);

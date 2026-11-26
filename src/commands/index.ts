@@ -2,10 +2,10 @@
  * CLI commands for GitHub Sidebar
  */
 
-import type { GitHubAccount, GitHubRepository, GitHubIssue, GitHubPullRequest, CommandContext } from '../types';
-import { getConfig, updateConfig, addAccount, removeAccount, listAccounts, getRepositoryFilter, updateRepositoryFilter } from '../core/config';
+import type { GitHubAccount, GitHubRepository, GitHubIssue, GitHubPullRequest } from '../types';
+import { getConfig, updateConfig, addAccount, removeAccount, listAccounts, updateRepositoryFilter } from '../core/config';
 import { createAuthenticatedClient } from '../auth/manager';
-import { syncAccount, triggerSync, isSyncInProgress } from '../core/sync';
+import { syncAccount, isSyncInProgress } from '../core/sync';
 import { validateToken } from '../auth/manager';
 
 export interface CommandResult {
@@ -27,7 +27,7 @@ export async function cmdAuthAdd(args: { type: string; username: string; token: 
     return { success: false, error: `Token validation failed: ${validation.error}` };
   }
 
-  const result = await addAccount({
+  const result = addAccount({
     type: type as GitHubAccount['type'],
     username: validation.user?.login || username,
     name: validation.user?.login,
@@ -60,7 +60,7 @@ export async function cmdAuthRemove(args: { accountId: string }): Promise<Comman
     return { success: false, error: `Account not found: ${accountId}` };
   }
 
-  const removed = await removeAccount(accountId);
+  const removed = removeAccount(accountId);
   if (!removed) {
     return { success: false, error: 'Failed to remove account' };
   }

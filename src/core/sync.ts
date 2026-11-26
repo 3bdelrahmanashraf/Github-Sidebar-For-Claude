@@ -2,7 +2,7 @@
  * Repository synchronization manager
  */
 
-import type { GitHubAccount, CachedRepository, SyncResult, SyncError } from '../types';
+import type { CachedRepository, SyncResult } from '../types';
 import { getConfig, updateAccount } from '../core/config';
 import { createAuthenticatedClient } from '../auth/manager';
 import {
@@ -27,7 +27,7 @@ export function onSyncComplete(accountId: string, callback: (result: SyncResult)
   return () => syncCallbacks.delete(accountId);
 }
 
-export async function syncAccount(accountId: string, full = false): Promise<SyncResult> {
+export async function syncAccount(accountId: string, _full = false): Promise<SyncResult> {
   if (syncInProgress.has(accountId)) {
     throw new Error(`Sync already in progress for account: ${accountId}`);
   }

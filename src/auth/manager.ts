@@ -8,6 +8,7 @@ import { createGitHubClient } from '../github/client';
 
 const SERVICE_NAME = 'github-sidebar-claude';
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let keytarModule: typeof import('keytar') | null = null;
 let keytarAvailable = false;
 
