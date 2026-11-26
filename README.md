@@ -80,6 +80,29 @@ node dist/cli.cjs repo list --account personal-yourusername
 ### Auto-start with Claude Desktop
 The plugin manifest is built into the package. Once the sidebar UI is implemented, it will auto-load when Claude Desktop starts.
 
+### Execution Context
+The CLI runs **locally on your machine** — no server required:
+- **Entry Point**: `dist/cli.cjs` (built from `src/cli.ts`)
+- **Environment**: Your local shell (PowerShell, bash, zsh)
+- **Working Directory**: Your current directory (`process.cwd()`)
+- **Config**: `~/.claude/github-sidebar/config.json`
+- **Cache**: SQLite at `~/.claude/github-sidebar/data/cache.db`
+- **Tokens**: OS keychain (Windows Credential Manager, macOS Keychain, Linux Secret Service)
+- **API Calls**: Direct HTTPS to `api.github.com` using your token
+
+### Claude Desktop Integration (Phase 4+)
+For the plugin to work **inside Claude's chat/terminal**, the following components are needed:
+
+| Component | Status | Description |
+|-----------|--------|-------------|
+| Plugin Manifest | ✅ Done | `manifest` object in `src/index.ts` |
+| Slash Commands | 🚧 Phase 4 | `/gh` commands in Claude chat |
+| Sidebar Panel | 🚧 Phase 4 | Lit-based Web Components in Claude's sidebar |
+| Terminal Commands | 🚧 Phase 4 | Commands in Claude's terminal panel |
+| Context Awareness | 🚧 Phase 5 | Detect repo from `cwd`, auto-suggest actions |
+
+**Next Implementation**: Phase 4 - Sidebar UI (Lit components) + Slash Commands + Terminal Integration
+
 ---
 
 ## Commands Reference
