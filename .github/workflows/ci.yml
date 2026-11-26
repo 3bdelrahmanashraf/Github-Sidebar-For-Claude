@@ -130,6 +130,18 @@ jobs:
           name: dist
           path: dist/
 
+      - name: Verify artifact freshness
+        run: |
+          echo "Artifact contents:"
+          ls -la dist/
+          echo "Checking index.js for better-sqlite3 import..."
+          if grep -q "better-sqlite3" dist/index.js; then
+            echo "ERROR: better-sqlite3 found in dist/index.js - artifact is stale!"
+            exit 1
+          else
+            echo "OK: better-sqlite3 not found in dist/index.js"
+          fi
+
       - name: Test CLI help
         run: node dist/index.js help
 
