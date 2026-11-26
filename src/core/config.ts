@@ -191,9 +191,22 @@ export function getConfig(): ValidatedConfig {
   return loadConfig();
 }
 
+function mergeConfig(target: ValidatedConfig, source: Partial<ValidatedConfig>): ValidatedConfig {
+  const result = { ...target };
+  for (const [key, value] of Object.entries(source)) {
+    if (value === undefined) continue;
+    if (value !== null && typeof value === 'object' && !Array.isArray(value) && key in target && typeof target[key as keyof ValidatedConfig] === 'object' && !Array.isArray(target[key as keyof ValidatedConfig])) {
+      (result as Record<string, unknown>)[key] = mergeConfig(target[key as keyof ValidatedConfig] as unknown as ValidatedConfig, value as Partial<ValidatedConfig>);
+    } else {
+      (result as Record<string, unknown>)[key] = value;
+    }
+  }
+  return result;
+}
+
 export function updateConfig(updates: Partial<ValidatedConfig>): ValidatedConfig {
   const current = loadConfig();
-  const merged = deepMerge(current, updates);
+  const merged = mergeConfig(current, updates) as ValidatedConfig;
   saveConfig(merged);
   return merged;
 }
@@ -241,9 +254,49 @@ export function getSidebarConfig(): SidebarConfig {
   return loadConfig().sidebar;
 }
 
+function mergeSidebarConfig(target: SidebarConfig, source: Partial<SidebarConfig>): SidebarConfig {
+  const result = { ...target };
+  for (const [key, value] of Object.entries(source)) {
+    if (value === undefined) continue;
+    if (value !== null && typeof value === 'object' && !Array.isArray(value) && key in target && typeof target[key as keyof SidebarConfig] === 'object' && !Array.isArray(target[key as keyof SidebarConfig])) {
+      (result as Record<string, unknown>)[key] = mergeSidebarConfig(target[key as keyof SidebarConfig] as unknown as SidebarConfig, value as Partial<SidebarConfig>);
+    } else {
+      (result as Record<string, unknown>)[key] = value;
+    }
+  }
+  return result;
+}
+
+function mergeNotificationsConfig(target: NotificationConfig, source: Partial<NotificationConfig>): NotificationConfig {
+  const result = { ...target };
+  for (const [key, value] of Object.entries(source)) {
+    if (value === undefined) continue;
+    (result as Record<string, unknown>)[key] = value;
+  }
+  return result;
+}
+
+function mergeAdvancedConfig(target: AdvancedConfig, source: Partial<AdvancedConfig>): AdvancedConfig {
+  const result = { ...target };
+  for (const [key, value] of Object.entries(source)) {
+    if (value === undefined) continue;
+    (result as Record<string, unknown>)[key] = value;
+  }
+  return result;
+}
+
+function mergeFilterConfig(target: RepositoryFilter, source: Partial<RepositoryFilter>): RepositoryFilter {
+  const result = { ...target };
+  for (const [key, value] of Object.entries(source)) {
+    if (value === undefined) continue;
+    (result as Record<string, unknown>)[key] = value;
+  }
+  return result;
+}
+
 export function updateSidebarConfig(updates: Partial<SidebarConfig>): SidebarConfig {
   const config = loadConfig();
-  config.sidebar = deepMerge(config.sidebar, updates);
+  config.sidebar = mergeSidebarConfig(config.sidebar, updates) as SidebarConfig;
   saveConfig(config);
   return config.sidebar;
 }
@@ -254,7 +307,7 @@ export function getNotificationConfig(): NotificationConfig {
 
 export function updateNotificationConfig(updates: Partial<NotificationConfig>): NotificationConfig {
   const config = loadConfig();
-  config.notifications = deepMerge(config.notifications, updates);
+  config.notifications = mergeNotificationsConfig(config.notifications, updates) as NotificationConfig;
   saveConfig(config);
   return config.notifications;
 }
@@ -265,7 +318,7 @@ export function getAdvancedConfig(): AdvancedConfig {
 
 export function updateAdvancedConfig(updates: Partial<AdvancedConfig>): AdvancedConfig {
   const config = loadConfig();
-  config.advanced = deepMerge(config.advanced, updates);
+  config.advanced = mergeAdvancedConfig(config.advanced, updates) as AdvancedConfig;
   saveConfig(config);
   return config.advanced;
 }
@@ -276,22 +329,9 @@ export function getRepositoryFilter(): RepositoryFilter {
 
 export function updateRepositoryFilter(updates: Partial<RepositoryFilter>): RepositoryFilter {
   const config = loadConfig();
-  config.sidebar.filter = deepMerge(config.sidebar.filter, updates);
+  config.sidebar.filter = mergeFilterConfig(config.sidebar.filter, updates) as RepositoryFilter;
   saveConfig(config);
   return config.sidebar.filter;
-}
-
-function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
-  const result = { ...target };
-  for (const [key, value] of Object.entries(source)) {
-    if (value === undefined) continue;
-    if (value !== null && typeof value === 'object' && !Array.isArray(value) && target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])) {
-      result[key] = deepMerge(target[key] as Record<string, unknown>, value as Record<string, unknown>) as T[Extract<keyof T, string>];
-    } else {
-      result[key] = value as T[Extract<keyof T, string>];
-    }
-  }
-  return result;
 }
 
 function generateAccountId(username: string, type: AccountType): string {

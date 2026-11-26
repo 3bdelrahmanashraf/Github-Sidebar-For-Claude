@@ -389,7 +389,7 @@ export function getRepositoryCount(accountId?: string): number {
 export function getLanguages(): string[] {
   const database = getDatabase();
   const stmt = database.prepare('SELECT DISTINCT language FROM repositories WHERE language IS NOT NULL ORDER BY language');
-  return stmt.all().map((row: { language: string }) => row.language);
+  return stmt.all().map((row: unknown) => (row as { language: string }).language);
 }
 
 export function getTopics(): string[] {

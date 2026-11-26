@@ -45,17 +45,18 @@ export class GitHubClient {
         timeout: getAdvancedConfig().apiTimeout,
       },
       throttle: {
-        onRateLimit: (retryAfter, options, octokit) => {
+        onRateLimit: (retryAfter: number, options: any, octokit: Octokit) => {
           console.warn(`Rate limit hit, retrying after ${retryAfter}s`);
           return octokit.request(options);
         },
-        onAbuseLimit: (retryAfter, options, octokit) => {
+        onAbuseLimit: (retryAfter: number, options: any, octokit: Octokit) => {
           console.warn(`Abuse limit hit, retrying after ${retryAfter}s`);
           return octokit.request(options);
         },
       },
     });
 
+    // @ts-expect-error - graphql.defaults returns a compatible function type
     this.graphqlClient = graphql.defaults({
       headers: {
         authorization: `Bearer ${account.token}`,
@@ -65,7 +66,25 @@ export class GitHubClient {
 
   async testConnection(): Promise<GitHubUser> {
     const { data } = await this.octokit.rest.users.getAuthenticated();
-    return data;
+    return {
+      login: data.login,
+      id: data.id,
+      avatar_url: data.avatar_url,
+      html_url: data.html_url,
+      type: data.type as 'User' | 'Organization',
+      name: data.name ?? null,
+      email: data.email ?? null,
+      company: data.company ?? null,
+      blog: data.blog ?? null,
+      location: data.location ?? null,
+      bio: data.bio ?? null,
+      public_repos: data.public_repos,
+      public_gists: data.public_gists,
+      followers: data.followers,
+      following: data.following,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    };
   }
 
   async getRateLimit(): Promise<RateLimitInfo> {
@@ -97,16 +116,16 @@ export class GitHubClient {
     } = options;
 
     for await (const response of this.octokit.paginate.iterator(
-      this.octokit.rest.repos.listForAuthenticatedUser,
+      this.octokit.rest.repos.listForAuthenticatedUser as any,
       { visibility, affiliation, type, sort, direction, per_page: perPage }
     )) {
-      yield response.data;
+      yield response.data as unknown as GitHubRepository[];
     }
   }
 
   async getRepository(owner: string, repo: string): Promise<GitHubRepository> {
     const { data } = await this.octokit.rest.repos.get({ owner, repo });
-    return data;
+    return data as unknown as GitHubRepository;
   }
 
   async *listIssues(owner: string, repo: string, options: {
@@ -119,10 +138,10 @@ export class GitHubClient {
     const { state = 'open', labels, sort = 'updated', direction = 'desc', perPage = 100 } = options;
 
     for await (const response of this.octokit.paginate.iterator(
-      this.octokit.rest.issues.listForRepo,
+      this.octokit.rest.issues.listForRepo as any,
       { owner, repo, state, labels, sort, direction, per_page: perPage }
     )) {
-      yield response.data.filter(issue => !issue.pull_request);
+      yield response.data.filter((issue: any) => !issue.pull_request) as unknown as GitHubIssue[];
     }
   }
 
@@ -135,21 +154,21 @@ export class GitHubClient {
     const { state = 'open', sort = 'updated', direction = 'desc', perPage = 100 } = options;
 
     for await (const response of this.octokit.paginate.iterator(
-      this.octokit.rest.pulls.list,
+      this.octokit.rest.pulls.list as any,
       { owner, repo, state, sort, direction, per_page: perPage }
     )) {
-      yield response.data;
+      yield response.data as unknown as GitHubPullRequest[];
     }
   }
 
   async getIssue(owner: string, repo: string, issueNumber: number): Promise<GitHubIssue> {
     const { data } = await this.octokit.rest.issues.get({ owner, repo, issue_number: issueNumber });
-    return data;
+    return data as unknown as GitHubIssue;
   }
 
   async getPullRequest(owner: string, repo: string, pullNumber: number): Promise<GitHubPullRequest> {
     const { data } = await this.octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber });
-    return data;
+    return data as unknown as GitHubPullRequest;
   }
 
   async createIssue(owner: string, repo: string, params: {
@@ -160,7 +179,7 @@ export class GitHubClient {
     milestone?: number;
   }): Promise<GitHubIssue> {
     const { data } = await this.octokit.rest.issues.create({ owner, repo, ...params });
-    return data;
+    return data as unknown as GitHubIssue;
   }
 
   async updateIssue(owner: string, repo: string, issueNumber: number, params: {
@@ -173,7 +192,7 @@ export class GitHubClient {
     milestone?: number | null;
   }): Promise<GitHubIssue> {
     const { data } = await this.octokit.rest.issues.update({ owner, repo, issue_number: issueNumber, ...params });
-    return data;
+    return data as unknown as GitHubIssue;
   }
 
   async createPullRequest(owner: string, repo: string, params: {
@@ -185,7 +204,7 @@ export class GitHubClient {
     maintainer_can_modify?: boolean;
   }): Promise<GitHubPullRequest> {
     const { data } = await this.octokit.rest.pulls.create({ owner, repo, ...params });
-    return data;
+    return data as unknown as GitHubPullRequest;
   }
 
   async updatePullRequest(owner: string, repo: string, pullNumber: number, params: {
@@ -196,7 +215,7 @@ export class GitHubClient {
     maintainer_can_modify?: boolean;
   }): Promise<GitHubPullRequest> {
     const { data } = await this.octokit.rest.pulls.update({ owner, repo, pull_number: pullNumber, ...params });
-    return data;
+    return data as unknown as GitHubPullRequest;
   }
 
   async mergePullRequest(owner: string, repo: string, pullNumber: number, options: {
@@ -205,15 +224,15 @@ export class GitHubClient {
     merge_method?: 'merge' | 'squash' | 'rebase';
   } = {}): Promise<{ merged: boolean; message: string }> {
     const { data } = await this.octokit.rest.pulls.merge({ owner, repo, pull_number: pullNumber, ...options });
-    return data;
+    return data as { merged: boolean; message: string };
   }
 
   async *listLabels(owner: string, repo: string): AsyncGenerator<GitHubLabel[]> {
     for await (const response of this.octokit.paginate.iterator(
-      this.octokit.rest.issues.listLabelsForRepo,
+      this.octokit.rest.issues.listLabelsForRepo as any,
       { owner, repo, per_page: 100 }
     )) {
-      yield response.data;
+      yield response.data as unknown as GitHubLabel[];
     }
   }
 
@@ -223,7 +242,7 @@ export class GitHubClient {
     description?: string;
   }): Promise<GitHubLabel> {
     const { data } = await this.octokit.rest.issues.createLabel({ owner, repo, ...params });
-    return data;
+    return data as unknown as GitHubLabel;
   }
 
   async *listMilestones(owner: string, repo: string, options: {
@@ -234,10 +253,10 @@ export class GitHubClient {
     const { state = 'open', sort = 'due_on', direction = 'asc' } = options;
 
     for await (const response of this.octokit.paginate.iterator(
-      this.octokit.rest.issues.listMilestones,
+      this.octokit.rest.issues.listMilestones as any,
       { owner, repo, state, sort, direction, per_page: 100 }
     )) {
-      yield response.data;
+      yield response.data as unknown as GitHubMilestone[];
     }
   }
 
@@ -255,7 +274,7 @@ export class GitHubClient {
     default_branch_only?: boolean;
   }): Promise<GitHubRepository> {
     const { data } = await this.octokit.rest.repos.createFork({ owner, repo, ...options });
-    return data;
+    return data as unknown as GitHubRepository;
   }
 
   async watchRepository(owner: string, repo: string): Promise<void> {
@@ -286,23 +305,13 @@ export class GitHubClient {
   }
 
   private async getOpenPRCount(owner: string, repo: string): Promise<number> {
-    const { data } = await this.octokit.rest.pulls.list({ owner, repo, state: 'open', per_page: 1 });
-    const link = this.octokit.paginate.getLinkHeader(data);
-    if (!link) return data.length;
-    const last = link.last;
-    if (!last) return data.length;
-    const match = last.match(/page=(\d+)/);
-    return match ? parseInt(match[1], 10) : data.length;
+    const { data } = await this.octokit.rest.pulls.list({ owner, repo, state: 'open', per_page: 100 });
+    return data.length;
   }
 
   private async getOpenIssueCount(owner: string, repo: string): Promise<number> {
-    const { data } = await this.octokit.rest.issues.listForRepo({ owner, repo, state: 'open', per_page: 1 });
-    const link = this.octokit.paginate.getLinkHeader(data);
-    if (!link) return data.length;
-    const last = link.last;
-    if (!last) return data.length;
-    const match = last.match(/page=(\d+)/);
-    return match ? parseInt(match[1], 10) : data.length;
+    const { data } = await this.octokit.rest.issues.listForRepo({ owner, repo, state: 'open', per_page: 100 });
+    return data.filter(issue => !issue.pull_request).length;
   }
 
   // GraphQL queries for complex data
@@ -315,6 +324,7 @@ export class GitHubClient {
   }> {
     const { first = 20, after } = options;
 
+    // @ts-expect-error - graphqlClient is callable
     const result = await this.graphqlClient<{
       search: {
         repositoryCount: number;
@@ -365,12 +375,13 @@ export class GitHubClient {
     `, { query, first, after });
 
     return {
-      repositories: result.search.edges.map(e => e.node),
+      repositories: result.search.edges.map((e: any) => e.node),
       pageInfo: result.search.pageInfo,
     };
   }
 
   async getViewer(): Promise<GitHubUser> {
+    // @ts-expect-error - graphqlClient is callable
     const result = await this.graphqlClient<{
       viewer: GitHubUser;
     }>(`

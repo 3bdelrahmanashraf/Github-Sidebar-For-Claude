@@ -34,7 +34,7 @@ export async function validateToken(token: string): Promise<TokenValidationResul
 
     return {
       valid: true,
-      scopes: tokenInfo.permissions ? Object.keys(tokenInfo.permissions) : [],
+      scopes: tokenInfo?.permissions ? Object.keys(tokenInfo.permissions as Record<string, unknown>) : [],
       user: {
         login: user.login,
         id: user.id,

@@ -167,8 +167,8 @@ export async function cmdRepoList(args: {
   // Sort
   const sortBy = args.sort || 'updated';
   results.sort((a, b) => {
-    const aVal = a[sortBy as keyof GitHubRepository];
-    const bVal = b[sortBy as keyof GitHubRepository];
+    const aVal = a[sortBy as keyof GitHubRepository] ?? '';
+    const bVal = b[sortBy as keyof GitHubRepository] ?? '';
     if (aVal < bVal) return 1;
     if (aVal > bVal) return -1;
     return 0;
