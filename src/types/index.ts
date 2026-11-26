@@ -277,6 +277,23 @@ export interface GitHubAccount {
   updatedAt: string;
   lastSyncAt?: string;
   settings: AccountSettings;
+
+  // OAuth2 fields
+  oauth2ClientId?: string;
+  oauth2RedirectUri?: string;
+
+  // GitHub App fields
+  githubAppId?: string;
+  githubAppInstallationId?: string;
+
+  // SSH key fields
+  sshKeyPath?: string;
+  sshKeyFingerprint?: string;
+
+  // Account metadata
+  isCurrent?: boolean;
+  organizationName?: string;
+  isEnterprise?: boolean;
 }
 
 export interface AccountSettings {
@@ -374,6 +391,23 @@ export interface SyncError {
   retryable: boolean;
 }
 
+export interface AuthResult {
+  success: boolean;
+  account?: GitHubAccount;
+  error?: string;
+}
+
+export interface TokenValidationResult {
+  valid: boolean;
+  scopes?: string[];
+  user?: {
+    login: string;
+    id: number;
+    avatar_url: string;
+  };
+  error?: string;
+}
+
 export interface PluginManifest {
   name: string;
   version: string;
@@ -426,4 +460,39 @@ export interface CommandContext {
   repository?: GitHubRepository;
   cwd: string;
   env: Record<string, string>;
+}
+
+export interface OAuth2Config {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  scopes: string[];
+}
+
+export interface GitHubAppConfig {
+  appId: string;
+  privateKey: string;
+  installationId?: string;
+}
+
+export interface SSHKeyInfo {
+  path: string;
+  fingerprint: string;
+  type: 'rsa' | 'ed25519' | 'ecdsa' | 'unknown';
+  isDefault: boolean;
+}
+
+export interface AccountSwitchResult {
+  success: boolean;
+  currentAccount?: GitHubAccount;
+  error?: string;
+}
+
+export interface AuditLogEntry {
+  timestamp: string;
+  accountId: string;
+  action: string;
+  details: Record<string, unknown>;
+  ip?: string;
+  userAgent?: string;
 }

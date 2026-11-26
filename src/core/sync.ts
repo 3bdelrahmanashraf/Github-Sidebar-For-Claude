@@ -5,15 +5,14 @@
 import type { CachedRepository, SyncResult } from '../types';
 import { getConfig, updateAccount } from '../core/config';
 import { createAuthenticatedClient } from '../auth/manager';
-import {
-  initDatabase,
-  upsertRepositories,
-  deleteRepository,
-  getRepository,
-  getRepositoryCount,
-  recordSync,
-  cleanupOldCache,
-} from '../storage/database';
+
+let dbModule: typeof import('../storage/database') | null = null;
+
+async function loadDbModule(): Promise<void> {
+  if (dbModule) return;
+  const dbPath = '../storage/database';
+  dbModule = await import(dbPath);
+}
 
 let syncInProgress = new Set<string>();
 const syncCallbacks = new Map<string, (result: SyncResult) => void>();
@@ -56,17 +55,18 @@ export async function syncAccount(accountId: string, _full = false): Promise<Syn
     const result = await client.syncAllRepositories();
 
     // Store repositories in local database
-    initDatabase();
-    upsertRepositories(result.repositories);
+    await loadDbModule();
+    dbModule!.initDatabase();
+    dbModule!.upsertRepositories(result.repositories);
 
     // Update account last sync time
     updateAccount(accountId, { lastSyncAt: result.timestamp });
 
     // Record sync history
-    recordSync(result);
+    dbModule!.recordSync(result);
 
     // Cleanup old cache
-    cleanupOldCache();
+    dbModule!.cleanupOldCache();
 
     // Notify callbacks
     const callback = syncCallbacks.get(accountId);
@@ -132,8 +132,9 @@ export async function syncRepository(
       cachedAt: new Date().toISOString(),
     };
 
-    initDatabase();
-    upsertRepositories([cached]);
+    await loadDbModule();
+    dbModule!.initDatabase();
+    dbModule!.upsertRepositories([cached]);
 
     return cached;
   } catch (error) {
@@ -143,26 +144,26 @@ export async function syncRepository(
 }
 
 export async function removeLocalRepository(accountId: string, githubId: number): Promise<boolean> {
-  initDatabase();
-  return deleteRepository(accountId, githubId);
+  await loadDbModule();
+  return dbModule!.deleteRepository(accountId, githubId);
 }
 
 export function getCachedRepository(
   accountId: string,
   githubId: number
 ): CachedRepository | undefined {
-  initDatabase();
-  return getRepository(accountId, githubId);
+  loadDbModule();
+  return dbModule!.getRepository(accountId, githubId);
 }
 
 export function getTotalRepositoryCount(): number {
-  initDatabase();
-  return getRepositoryCount();
+  loadDbModule();
+  return dbModule!.getRepositoryCount();
 }
 
 export function getAccountRepositoryCount(accountId: string): number {
-  initDatabase();
-  return getRepositoryCount(accountId);
+  loadDbModule();
+  return dbModule!.getRepositoryCount(accountId);
 }
 
 export async function startPeriodicSync(): Promise<void> {

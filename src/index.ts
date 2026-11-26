@@ -298,7 +298,8 @@ let initDb: () => void;
 let closeDb: () => void;
 
 async function loadDatabase(): Promise<void> {
-  const db = await import('./storage/database');
+  const dbPath = './storage/database';
+  const db = await import(dbPath);
   initDb = db.initDatabase;
   closeDb = db.closeDatabase;
   initDb();
