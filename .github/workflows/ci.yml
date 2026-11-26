@@ -104,6 +104,15 @@ jobs:
           test -f dist/index.d.ts
           node dist/index.js --version
 
+      - name: Verify no better-sqlite3 in build output
+        run: |
+          if grep -q "better-sqlite3" dist/index.js; then
+            echo "ERROR: better-sqlite3 found in dist/index.js"
+            exit 1
+          else
+            echo "OK: better-sqlite3 not found in dist/index.js"
+          fi
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
