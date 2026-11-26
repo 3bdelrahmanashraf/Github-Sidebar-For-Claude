@@ -2,17 +2,84 @@
  * Repository synchronization manager
  */
 
-import type { CachedRepository, SyncResult } from '../types';
+import type { CachedRepository, SyncResult, GitHubRepository } from '../types';
 import { getConfig, updateAccount } from '../core/config';
 import { createAuthenticatedClient } from '../auth/manager';
+import type * as DatabaseModule from '../storage/database';
 
-let dbModule: typeof import('../storage/database') | null = null;
+let dbModule: typeof DatabaseModule | null = null;
 
 async function loadDbModule(): Promise<void> {
   if (dbModule) return;
   const dbPath = '../storage/database';
   dbModule = await import(dbPath);
 }
+
+// In-memory cache with TTL
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+  etag?: string;
+}
+
+class MemoryCache<T> {
+  private cache = new Map<string, CacheEntry<T>>();
+  private defaultTtl: number;
+
+  constructor(defaultTtlMs = 5 * 60 * 1000) { // 5 minutes default
+    this.defaultTtl = defaultTtlMs;
+  }
+
+  set(key: string, data: T, ttlMs?: number, etag?: string): void {
+    const expiresAt = Date.now() + (ttlMs || this.defaultTtl);
+    this.cache.set(key, { data, expiresAt, etag });
+  }
+
+  get(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.data;
+  }
+
+  getWithEtag(key: string): { data: T | null; etag?: string } {
+    const entry = this.cache.get(key);
+    if (!entry) return { data: null };
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return { data: null };
+    }
+    return { data: entry.data, etag: entry.etag };
+  }
+
+  delete(key: string): boolean {
+    return this.cache.delete(key);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  // Cleanup expired entries
+  cleanup(): number {
+    let removed = 0;
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.expiresAt <= now) {
+        this.cache.delete(key);
+        removed++;
+      }
+    }
+    return removed;
+  }
+}
+
+// Repository cache with ETag support
+const repositoryCache = new MemoryCache<CachedRepository[]>(5 * 60 * 1000); // 5 min TTL
+const statsCache = new MemoryCache<Record<string, number>>(10 * 60 * 1000); // 10 min TTL
 
 let syncInProgress = new Set<string>();
 const syncCallbacks = new Map<string, (result: SyncResult) => void>();
@@ -29,7 +96,7 @@ export function onSyncComplete(
   return () => syncCallbacks.delete(accountId);
 }
 
-export async function syncAccount(accountId: string, _full = false): Promise<SyncResult> {
+export async function syncAccount(accountId: string, options: { full?: boolean; incremental?: boolean } = {}): Promise<SyncResult> {
   if (syncInProgress.has(accountId)) {
     throw new Error(`Sync already in progress for account: ${accountId}`);
   }
@@ -40,7 +107,7 @@ export async function syncAccount(accountId: string, _full = false): Promise<Syn
     throw new Error(`Account not found: ${accountId}`);
   }
 
-  if (!account.settings.syncEnabled) {
+  if (!account.settings.syncEnabled && !options.full) {
     throw new Error(`Sync disabled for account: ${accountId}`);
   }
 
@@ -52,54 +119,115 @@ export async function syncAccount(accountId: string, _full = false): Promise<Syn
       throw new Error(`Failed to create client for account: ${accountId}`);
     }
 
-    const result = await client.syncAllRepositories();
+    // Check cache first for incremental sync
+    let repositories: CachedRepository[] = [];
+    let fromCache = false;
 
-    // Store repositories in local database
-    await loadDbModule();
-    dbModule!.initDatabase();
-    dbModule!.upsertRepositories(result.repositories);
+    if (!options.full && options.incremental !== false) {
+      const cached = repositoryCache.get(accountId);
+      if (cached) {
+        repositories = cached;
+        fromCache = true;
+      }
+    }
+
+    // If not from cache or full sync requested, fetch from API
+    let syncResult: SyncResult;
+    if (!fromCache || options.full) {
+      syncResult = await client.syncAllRepositories();
+      // Convert GitHubRepository[] to CachedRepository[]
+      repositories = syncResult.repositories.map(r => ({
+        ...r,
+        accountId,
+        stats: r.stats,
+        cachedAt: new Date().toISOString(),
+      }));
+
+      // Update cache with new data
+      repositoryCache.set(accountId, repositories);
+
+      // Store repositories in local database
+      await loadDbModule();
+      dbModule!.initDatabase();
+      dbModule!.upsertRepositories(repositories);
+    }
 
     // Update account last sync time
-    updateAccount(accountId, { lastSyncAt: result.timestamp });
+    updateAccount(accountId, { lastSyncAt: new Date().toISOString() });
 
     // Record sync history
-    dbModule!.recordSync(result);
+    const finalResult: SyncResult = {
+      accountId,
+      repositories,
+      added: fromCache ? 0 : repositories.length,
+      updated: 0,
+      removed: 0,
+      errors: [],
+      duration: 0,
+      timestamp: new Date().toISOString(),
+    };
 
-    // Cleanup old cache
-    dbModule!.cleanupOldCache();
+    await loadDbModule();
+    dbModule!.recordSync(finalResult);
+
+    // Cleanup old cache periodically
+    if (Math.random() < 0.1) { // 10% chance
+      dbModule!.cleanupOldCache();
+      repositoryCache.cleanup();
+      statsCache.cleanup();
+    }
 
     // Notify callbacks
     const callback = syncCallbacks.get(accountId);
     if (callback) {
-      callback(result);
+      callback(finalResult);
     }
 
-    return result;
+    return finalResult;
   } finally {
     syncInProgress.delete(accountId);
   }
 }
 
-export async function syncAllAccounts(): Promise<SyncResult[]> {
+export async function syncAllAccounts(options: { full?: boolean; incremental?: boolean; concurrency?: number } = {}): Promise<SyncResult[]> {
   const config = getConfig();
+  const { concurrency = 3 } = options; // Limit concurrent syncs
   const results: SyncResult[] = [];
 
-  for (const account of config.accounts) {
-    if (account.settings.syncEnabled) {
+  const accountsToSync = config.accounts.filter(a => a.settings.syncEnabled || options.full);
+
+  // Process accounts in batches with concurrency limit
+  for (let i = 0; i < accountsToSync.length; i += concurrency) {
+    const batch = accountsToSync.slice(i, i + concurrency);
+    const batchPromises = batch.map(async (account) => {
       try {
-        const result = await syncAccount(account.id);
-        results.push(result);
+        const result = await syncAccount(account.id, { full: options.full, incremental: options.incremental });
+        return { success: true, result };
       } catch (error) {
         console.error(`Sync failed for ${account.username}:`, error);
-        results.push({
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
           accountId: account.id,
+        };
+      }
+    });
+
+    const batchResults = await Promise.all(batchPromises);
+
+    for (const batchResult of batchResults) {
+      if (batchResult.success && batchResult.result) {
+        results.push(batchResult.result);
+      } else {
+        results.push({
+          accountId: batchResult.accountId ?? 'unknown',
           repositories: [],
           added: 0,
           updated: 0,
           removed: 0,
           errors: [
             {
-              message: error instanceof Error ? error.message : 'Unknown error',
+              message: batchResult.error || 'Unknown error',
               retryable: true,
             },
           ],

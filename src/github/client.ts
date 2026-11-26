@@ -106,6 +106,7 @@ export class GitHubClient {
       sort?: 'created' | 'updated' | 'pushed' | 'full_name';
       direction?: 'asc' | 'desc';
       perPage?: number;
+      fields?: string[]; // Selective field fetching
     } = {}
   ): AsyncGenerator<GitHubRepository[]> {
     const {
@@ -115,13 +116,29 @@ export class GitHubClient {
       sort = 'updated',
       direction = 'desc',
       perPage = 100,
+      fields,
     } = options;
 
     for await (const response of this.octokit.paginate.iterator(
       this.octokit.rest.repos.listForAuthenticatedUser as any,
       { visibility, affiliation, type, sort, direction, per_page: perPage }
     )) {
-      yield response.data as unknown as GitHubRepository[];
+      let repositories = response.data as unknown as GitHubRepository[];
+
+      // Apply selective field filtering if requested
+      if (fields && fields.length > 0) {
+        repositories = repositories.map(repo => {
+          const filtered: Partial<GitHubRepository> = {};
+          for (const field of fields) {
+            if (field in repo) {
+              (filtered as any)[field] = (repo as any)[field];
+            }
+          }
+          return filtered as GitHubRepository;
+        });
+      }
+
+      yield repositories;
     }
   }
 
@@ -489,7 +506,7 @@ export class GitHubClient {
     return this.account;
   }
 
-  async syncAllRepositories(): Promise<SyncResult> {
+  async syncAllRepositories(options: { fields?: string[] } = {}): Promise<SyncResult> {
     const startTime = Date.now();
     const errors: SyncError[] = [];
     const repositories: CachedRepository[] = [];
@@ -497,9 +514,21 @@ export class GitHubClient {
     let updated = 0;
 
     try {
-      for await (const batch of this.listRepositories({ visibility: 'all' })) {
+      // Use selective field fetching for better performance
+      const fields = options.fields || [
+        'id', 'name', 'full_name', 'owner', 'private', 'html_url',
+        'description', 'fork', 'created_at', 'updated_at', 'pushed_at',
+        'stargazers_count', 'watchers_count', 'forks_count', 'open_issues_count',
+        'language', 'topics', 'visibility', 'default_branch', 'license',
+        'permissions', 'archived', 'disabled', 'fork', 'language', 'topics'
+      ];
+
+      for await (const batch of this.listRepositories({ visibility: 'all', fields })) {
         for (const repo of batch) {
           try {
+            // Check rate limit before making stats request
+            await this.checkRateLimit();
+
             const stats = await this.getRepositoryStats(repo.owner.login, repo.name);
             const cached: CachedRepository = {
               ...repo,
@@ -535,6 +564,16 @@ export class GitHubClient {
       duration: Date.now() - startTime,
       timestamp: new Date().toISOString(),
     };
+  }
+
+  // Rate limit awareness
+  private async checkRateLimit(): Promise<void> {
+    const rateLimit = await this.getRateLimit();
+    if (rateLimit.remaining < 100) {
+      const waitTime = Math.max(0, (rateLimit.reset * 1000) - Date.now()) + 1000;
+      console.warn(`Rate limit low (${rateLimit.remaining} remaining). Waiting ${waitTime}ms`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
   }
 }
 
