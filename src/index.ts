@@ -7,7 +7,6 @@
  */
 
 import { loadConfig, ensureConfigDir } from './core/config';
-import { initDatabase, closeDatabase } from './storage/database';
 import { startPeriodicSync } from './core/sync';
 import { validateToken, getStoredToken } from './auth/manager';
 import type { PluginConfig, PluginManifest } from './types';
@@ -295,6 +294,16 @@ export const manifest: PluginManifest = {
 let initialized = false;
 let shutdownHandlers: Array<() => void | Promise<void>> = [];
 
+let initDb: () => void;
+let closeDb: () => void;
+
+async function loadDatabase(): Promise<void> {
+  const db = await import('./storage/database');
+  initDb = db.initDatabase;
+  closeDb = db.closeDatabase;
+  initDb();
+}
+
 export async function initialize(): Promise<PluginConfig> {
   if (initialized) {
     return loadConfig();
@@ -303,8 +312,8 @@ export async function initialize(): Promise<PluginConfig> {
   // Ensure config directory exists
   ensureConfigDir();
 
-  // Initialize database
-  initDatabase();
+  // Initialize database (lazy-loaded to avoid native module issues in CLI help)
+  await loadDatabase();
 
   // Load configuration
   const config = loadConfig();
@@ -336,7 +345,9 @@ export async function shutdown(): Promise<void> {
       console.error('Shutdown handler error:', error);
     }
   }
-  closeDatabase();
+  if (closeDb) {
+    closeDb();
+  }
   initialized = false;
   console.warn('GitHub Sidebar for Claude shut down');
 }
@@ -360,8 +371,6 @@ export * from './core/sync';
 export * from './auth/manager';
 export * from './github/client';
 export {
-  initDatabase,
-  closeDatabase,
   upsertRepository,
   upsertRepositories,
   getRepositories,
