@@ -8,6 +8,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   external: ['better-sqlite3', 'keytar'],
+  noExternal: ['zod', '@octokit/rest', '@octokit/graphql'],
   banner: {
     js: '#!/usr/bin/env node',
   },
