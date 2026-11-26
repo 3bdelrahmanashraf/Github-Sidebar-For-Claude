@@ -316,7 +316,9 @@ export function getRepositories(accountId?: string): CachedRepository[] {
   let stmt;
 
   if (accountId) {
-    stmt = database.prepare('SELECT * FROM repositories WHERE account_id = ? ORDER BY updated_at DESC');
+    stmt = database.prepare(
+      'SELECT * FROM repositories WHERE account_id = ? ORDER BY updated_at DESC'
+    );
     return stmt.all(accountId) as CachedRepository[];
   }
 
@@ -326,7 +328,9 @@ export function getRepositories(accountId?: string): CachedRepository[] {
 
 export function getRepository(accountId: string, githubId: number): CachedRepository | undefined {
   const database = getDatabase();
-  const stmt = database.prepare('SELECT * FROM repositories WHERE account_id = ? AND github_id = ?');
+  const stmt = database.prepare(
+    'SELECT * FROM repositories WHERE account_id = ? AND github_id = ?'
+  );
   return stmt.get(accountId, githubId) as CachedRepository | undefined;
 }
 
@@ -339,7 +343,9 @@ export function deleteRepository(accountId: string, githubId: number): boolean {
 
 export function getRepositoriesByLanguage(language: string): CachedRepository[] {
   const database = getDatabase();
-  const stmt = database.prepare('SELECT * FROM repositories WHERE language = ? ORDER BY stargazers_count DESC');
+  const stmt = database.prepare(
+    'SELECT * FROM repositories WHERE language = ? ORDER BY stargazers_count DESC'
+  );
   return stmt.all(language) as CachedRepository[];
 }
 
@@ -359,7 +365,13 @@ export function searchRepositories(query: string, accountId?: string): CachedRep
       )
       ORDER BY updated_at DESC
     `);
-    return stmt.all(accountId, searchTerm, searchTerm, searchTerm, searchTerm) as CachedRepository[];
+    return stmt.all(
+      accountId,
+      searchTerm,
+      searchTerm,
+      searchTerm,
+      searchTerm
+    ) as CachedRepository[];
   }
 
   stmt = database.prepare(`
@@ -388,13 +400,17 @@ export function getRepositoryCount(accountId?: string): number {
 
 export function getLanguages(): string[] {
   const database = getDatabase();
-  const stmt = database.prepare('SELECT DISTINCT language FROM repositories WHERE language IS NOT NULL ORDER BY language');
+  const stmt = database.prepare(
+    'SELECT DISTINCT language FROM repositories WHERE language IS NOT NULL ORDER BY language'
+  );
   return stmt.all().map((row: unknown) => (row as { language: string }).language);
 }
 
 export function getTopics(): string[] {
   const database = getDatabase();
-  const stmt = database.prepare('SELECT topics FROM repositories WHERE topics IS NOT NULL AND topics != "[]"');
+  const stmt = database.prepare(
+    'SELECT topics FROM repositories WHERE topics IS NOT NULL AND topics != "[]"'
+  );
   const rows = stmt.all() as { topics: string }[];
   const topics = new Set<string>();
   for (const row of rows) {
@@ -529,7 +545,9 @@ export function recordSync(result: SyncResult): void {
   );
 
   // Update account last_sync_at
-  database.prepare('UPDATE accounts SET last_sync_at = ? WHERE id = ?').run(result.timestamp, result.accountId);
+  database
+    .prepare('UPDATE accounts SET last_sync_at = ? WHERE id = ?')
+    .run(result.timestamp, result.accountId);
 }
 
 export function getSyncHistory(accountId: string, limit = 50): SyncResult[] {

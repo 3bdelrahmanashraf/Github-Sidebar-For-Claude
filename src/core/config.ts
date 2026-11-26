@@ -71,12 +71,22 @@ const SidebarConfigSchema = z.object({
 
 const NotificationConfigSchema = z.object({
   enabled: z.boolean().default(true),
-  events: z.array(z.enum([
-    'new_issue', 'issue_closed', 'new_pr', 'pr_merged', 'pr_closed',
-    'new_release', 'security_alert', 'workflow_failure', 'mention', 'review_request',
-  ])).default([
-    'new_issue', 'new_pr', 'pr_merged', 'security_alert', 'review_request',
-  ]),
+  events: z
+    .array(
+      z.enum([
+        'new_issue',
+        'issue_closed',
+        'new_pr',
+        'pr_merged',
+        'pr_closed',
+        'new_release',
+        'security_alert',
+        'workflow_failure',
+        'mention',
+        'review_request',
+      ])
+    )
+    .default(['new_issue', 'new_pr', 'pr_merged', 'security_alert', 'review_request']),
   sound: z.boolean().default(false),
   desktop: z.boolean().default(true),
 });
@@ -127,13 +137,7 @@ const DEFAULT_CONFIG: PluginConfig = {
   },
   notifications: {
     enabled: true,
-    events: [
-      'new_issue',
-      'new_pr',
-      'pr_merged',
-      'security_alert',
-      'review_request',
-    ],
+    events: ['new_issue', 'new_pr', 'pr_merged', 'security_alert', 'review_request'],
     sound: false,
     desktop: true,
   },
@@ -195,8 +199,18 @@ function mergeConfig(target: ValidatedConfig, source: Partial<ValidatedConfig>):
   const result = { ...target };
   for (const [key, value] of Object.entries(source)) {
     if (value === undefined) continue;
-    if (value !== null && typeof value === 'object' && !Array.isArray(value) && key in target && typeof target[key as keyof ValidatedConfig] === 'object' && !Array.isArray(target[key as keyof ValidatedConfig])) {
-      (result as Record<string, unknown>)[key] = mergeConfig(target[key as keyof ValidatedConfig] as unknown as ValidatedConfig, value as Partial<ValidatedConfig>);
+    if (
+      value !== null &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      key in target &&
+      typeof target[key as keyof ValidatedConfig] === 'object' &&
+      !Array.isArray(target[key as keyof ValidatedConfig])
+    ) {
+      (result as Record<string, unknown>)[key] = mergeConfig(
+        target[key as keyof ValidatedConfig] as unknown as ValidatedConfig,
+        value as Partial<ValidatedConfig>
+      );
     } else {
       (result as Record<string, unknown>)[key] = value;
     }
@@ -211,7 +225,9 @@ export function updateConfig(updates: Partial<ValidatedConfig>): ValidatedConfig
   return merged;
 }
 
-export function addAccount(account: Omit<GitHubAccount, 'id' | 'createdAt' | 'updatedAt'>): GitHubAccount {
+export function addAccount(
+  account: Omit<GitHubAccount, 'id' | 'createdAt' | 'updatedAt'>
+): GitHubAccount {
   const config = loadConfig();
   const newAccount: GitHubAccount = {
     ...account,
@@ -233,7 +249,10 @@ export function removeAccount(accountId: string): boolean {
   return true;
 }
 
-export function updateAccount(accountId: string, updates: Partial<GitHubAccount>): GitHubAccount | null {
+export function updateAccount(
+  accountId: string,
+  updates: Partial<GitHubAccount>
+): GitHubAccount | null {
   const config = loadConfig();
   const account = config.accounts.find(a => a.id === accountId);
   if (!account) return null;
@@ -258,8 +277,18 @@ function mergeSidebarConfig(target: SidebarConfig, source: Partial<SidebarConfig
   const result = { ...target };
   for (const [key, value] of Object.entries(source)) {
     if (value === undefined) continue;
-    if (value !== null && typeof value === 'object' && !Array.isArray(value) && key in target && typeof target[key as keyof SidebarConfig] === 'object' && !Array.isArray(target[key as keyof SidebarConfig])) {
-      (result as Record<string, unknown>)[key] = mergeSidebarConfig(target[key as keyof SidebarConfig] as unknown as SidebarConfig, value as Partial<SidebarConfig>);
+    if (
+      value !== null &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      key in target &&
+      typeof target[key as keyof SidebarConfig] === 'object' &&
+      !Array.isArray(target[key as keyof SidebarConfig])
+    ) {
+      (result as Record<string, unknown>)[key] = mergeSidebarConfig(
+        target[key as keyof SidebarConfig] as unknown as SidebarConfig,
+        value as Partial<SidebarConfig>
+      );
     } else {
       (result as Record<string, unknown>)[key] = value;
     }
@@ -267,7 +296,10 @@ function mergeSidebarConfig(target: SidebarConfig, source: Partial<SidebarConfig
   return result;
 }
 
-function mergeNotificationsConfig(target: NotificationConfig, source: Partial<NotificationConfig>): NotificationConfig {
+function mergeNotificationsConfig(
+  target: NotificationConfig,
+  source: Partial<NotificationConfig>
+): NotificationConfig {
   const result = { ...target };
   for (const [key, value] of Object.entries(source)) {
     if (value === undefined) continue;
@@ -276,7 +308,10 @@ function mergeNotificationsConfig(target: NotificationConfig, source: Partial<No
   return result;
 }
 
-function mergeAdvancedConfig(target: AdvancedConfig, source: Partial<AdvancedConfig>): AdvancedConfig {
+function mergeAdvancedConfig(
+  target: AdvancedConfig,
+  source: Partial<AdvancedConfig>
+): AdvancedConfig {
   const result = { ...target };
   for (const [key, value] of Object.entries(source)) {
     if (value === undefined) continue;
@@ -285,7 +320,10 @@ function mergeAdvancedConfig(target: AdvancedConfig, source: Partial<AdvancedCon
   return result;
 }
 
-function mergeFilterConfig(target: RepositoryFilter, source: Partial<RepositoryFilter>): RepositoryFilter {
+function mergeFilterConfig(
+  target: RepositoryFilter,
+  source: Partial<RepositoryFilter>
+): RepositoryFilter {
   const result = { ...target };
   for (const [key, value] of Object.entries(source)) {
     if (value === undefined) continue;
@@ -307,7 +345,10 @@ export function getNotificationConfig(): NotificationConfig {
 
 export function updateNotificationConfig(updates: Partial<NotificationConfig>): NotificationConfig {
   const config = loadConfig();
-  config.notifications = mergeNotificationsConfig(config.notifications, updates) as NotificationConfig;
+  config.notifications = mergeNotificationsConfig(
+    config.notifications,
+    updates
+  ) as NotificationConfig;
   saveConfig(config);
   return config.notifications;
 }

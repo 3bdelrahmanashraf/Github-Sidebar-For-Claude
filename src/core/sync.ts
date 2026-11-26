@@ -22,7 +22,10 @@ export function isSyncInProgress(accountId: string): boolean {
   return syncInProgress.has(accountId);
 }
 
-export function onSyncComplete(accountId: string, callback: (result: SyncResult) => void): () => void {
+export function onSyncComplete(
+  accountId: string,
+  callback: (result: SyncResult) => void
+): () => void {
   syncCallbacks.set(accountId, callback);
   return () => syncCallbacks.delete(accountId);
 }
@@ -94,10 +97,12 @@ export async function syncAllAccounts(): Promise<SyncResult[]> {
           added: 0,
           updated: 0,
           removed: 0,
-          errors: [{
-            message: error instanceof Error ? error.message : 'Unknown error',
-            retryable: true,
-          }],
+          errors: [
+            {
+              message: error instanceof Error ? error.message : 'Unknown error',
+              retryable: true,
+            },
+          ],
           duration: 0,
           timestamp: new Date().toISOString(),
         });
@@ -108,7 +113,11 @@ export async function syncAllAccounts(): Promise<SyncResult[]> {
   return results;
 }
 
-export async function syncRepository(accountId: string, owner: string, repo: string): Promise<CachedRepository | null> {
+export async function syncRepository(
+  accountId: string,
+  owner: string,
+  repo: string
+): Promise<CachedRepository | null> {
   const client = await createAuthenticatedClient(accountId);
   if (!client) return null;
 
@@ -138,7 +147,10 @@ export async function removeLocalRepository(accountId: string, githubId: number)
   return deleteRepository(accountId, githubId);
 }
 
-export function getCachedRepository(accountId: string, githubId: number): CachedRepository | undefined {
+export function getCachedRepository(
+  accountId: string,
+  githubId: number
+): CachedRepository | undefined {
   initDatabase();
   return getRepository(accountId, githubId);
 }

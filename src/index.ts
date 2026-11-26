@@ -40,48 +40,255 @@ export const manifest: PluginManifest = {
     '@octokit/rest': '^20.0.0',
     '@octokit/graphql': '^7.0.0',
     'better-sqlite3': '^11.0.0',
-    'keytar': '^7.9.0',
-    'zod': '^3.22.0',
+    keytar: '^7.9.0',
+    zod: '^3.22.0',
   },
   devDependencies: {
     '@types/better-sqlite3': '^7.6.0',
     '@types/node': '^20.0.0',
-    'eslint': '^9.0.0',
-    'prettier': '^3.0.0',
-    'tsup': '^8.0.0',
-    'typescript': '^5.0.0',
-    'vitest': '^2.0.0',
+    eslint: '^9.0.0',
+    prettier: '^3.0.0',
+    tsup: '^8.0.0',
+    typescript: '^5.0.0',
+    vitest: '^2.0.0',
   },
   claude: {
     minVersion: '1.0.0',
     commands: [
-      { name: 'gh auth add', description: 'Add a GitHub account', usage: 'gh auth add --type personal --username USER --token TOKEN', examples: ['gh auth add --type personal --username me --token ghp_xxx'], options: [{ name: 'type', description: 'Account type', type: 'string', required: true }, { name: 'username', description: 'GitHub username', type: 'string', required: true }, { name: 'token', description: 'Personal Access Token', type: 'string', required: true }] },
-      { name: 'gh auth remove', description: 'Remove a GitHub account', usage: 'gh auth remove --account-id ID', examples: ['gh auth remove --account-id personal-me'], options: [{ name: 'account-id', description: 'Account ID to remove', type: 'string', required: true }] },
-      { name: 'gh auth list', description: 'List configured GitHub accounts', usage: 'gh auth list', examples: ['gh auth list'], options: [] },
-      { name: 'gh auth validate', description: 'Validate account tokens', usage: 'gh auth validate [--account-id ID]', examples: ['gh auth validate'], options: [{ name: 'account-id', description: 'Specific account to validate', type: 'string', required: false }] },
-      { name: 'gh repo list', description: 'List repositories', usage: 'gh repo list [--account ID] [--visibility public|private] [--language LANG] [--search QUERY]', examples: ['gh repo list --account me --language typescript'], options: [{ name: 'account', description: 'Account ID', type: 'string', required: false }, { name: 'visibility', description: 'Repository visibility', type: 'string', required: false }, { name: 'language', description: 'Filter by language', type: 'string', required: false }, { name: 'search', description: 'Search query', type: 'string', required: false }, { name: 'sort', description: 'Sort field', type: 'string', required: false }, { name: 'limit', description: 'Max results', type: 'number', required: false }] },
-      { name: 'gh repo sync', description: 'Sync repositories', usage: 'gh repo sync [--account ID] [--force]', examples: ['gh repo sync --account me --force'], options: [{ name: 'account', description: 'Account ID', type: 'string', required: false }, { name: 'force', description: 'Force sync even if in progress', type: 'boolean', required: false }] },
-      { name: 'gh repo show', description: 'Show repository details', usage: 'gh repo show --account ID --repo owner/repo', examples: ['gh repo show --account me --repo owner/repo'], options: [{ name: 'account', description: 'Account ID', type: 'string', required: true }, { name: 'repo', description: 'Repository (owner/repo)', type: 'string', required: true }] },
-      { name: 'gh issue list', description: 'List issues', usage: 'gh issue list --account ID --repo owner/repo [--state open|closed] [--labels LABELS]', examples: ['gh issue list --account me --repo owner/repo --state open'], options: [{ name: 'account', description: 'Account ID', type: 'string', required: true }, { name: 'repo', description: 'Repository (owner/repo)', type: 'string', required: true }, { name: 'state', description: 'Issue state', type: 'string', required: false }, { name: 'labels', description: 'Filter by labels', type: 'string', required: false }, { name: 'limit', description: 'Max results', type: 'number', required: false }] },
-      { name: 'gh issue create', description: 'Create an issue', usage: 'gh issue create --account ID --repo owner/repo --title TITLE [--body BODY] [--labels LABELS]', examples: ['gh issue create --account me --repo owner/repo --title "Bug" --body "Details"'], options: [{ name: 'account', description: 'Account ID', type: 'string', required: true }, { name: 'repo', description: 'Repository (owner/repo)', type: 'string', required: true }, { name: 'title', description: 'Issue title', type: 'string', required: true }, { name: 'body', description: 'Issue body', type: 'string', required: false }, { name: 'labels', description: 'Comma-separated labels', type: 'string', required: false }, { name: 'assignees', description: 'Comma-separated assignees', type: 'string', required: false }] },
-      { name: 'gh pr list', description: 'List pull requests', usage: 'gh pr list --account ID --repo owner/repo [--state open|closed]', examples: ['gh pr list --account me --repo owner/repo --state open'], options: [{ name: 'account', description: 'Account ID', type: 'string', required: true }, { name: 'repo', description: 'Repository (owner/repo)', type: 'string', required: true }, { name: 'state', description: 'PR state', type: 'string', required: false }, { name: 'limit', description: 'Max results', type: 'number', required: false }] },
-      { name: 'gh pr create', description: 'Create a pull request', usage: 'gh pr create --account ID --repo owner/repo --title TITLE --head BRANCH [--base BASE] [--body BODY]', examples: ['gh pr create --account me --repo owner/repo --title "Feature" --head feature-branch'], options: [{ name: 'account', description: 'Account ID', type: 'string', required: true }, { name: 'repo', description: 'Repository (owner/repo)', type: 'string', required: true }, { name: 'title', description: 'PR title', type: 'string', required: true }, { name: 'head', description: 'Head branch', type: 'string', required: true }, { name: 'base', description: 'Base branch', type: 'string', required: false }, { name: 'body', description: 'PR body', type: 'string', required: false }, { name: 'draft', description: 'Create as draft', type: 'boolean', required: false }] },
-      { name: 'gh config get', description: 'Get configuration', usage: 'gh config get [--key KEY]', examples: ['gh config get --key sidebar.width'], options: [{ name: 'key', description: 'Config key (dot notation)', type: 'string', required: false }] },
-      { name: 'gh config set', description: 'Set configuration', usage: 'gh config set --key KEY --value VALUE', examples: ['gh config set --key sidebar.width --value 400'], options: [{ name: 'key', description: 'Config key (dot notation)', type: 'string', required: true }, { name: 'value', description: 'JSON value', type: 'string', required: true }] },
-      { name: 'gh filter set', description: 'Set repository filters', usage: 'gh filter set [--visibility public,private] [--language ts,js] [--topic cli,plugin] [--search QUERY]', examples: ['gh filter set --visibility public,private --language ts,js'], options: [{ name: 'visibility', description: 'Comma-separated visibility', type: 'string', required: false }, { name: 'language', description: 'Comma-separated languages', type: 'string', required: false }, { name: 'topic', description: 'Comma-separated topics', type: 'string', required: false }, { name: 'search', description: 'Search query', type: 'string', required: false }, { name: 'account', description: 'Comma-separated account IDs', type: 'string', required: false }] },
-      { name: 'gh filter clear', description: 'Clear all filters', usage: 'gh filter clear', examples: ['gh filter clear'], options: [] },
-      { name: 'gh stats', description: 'Show GitHub statistics', usage: 'gh stats', examples: ['gh stats'], options: [] },
+      {
+        name: 'gh auth add',
+        description: 'Add a GitHub account',
+        usage: 'gh auth add --type personal --username USER --token TOKEN',
+        examples: ['gh auth add --type personal --username me --token ghp_xxx'],
+        options: [
+          { name: 'type', description: 'Account type', type: 'string', required: true },
+          { name: 'username', description: 'GitHub username', type: 'string', required: true },
+          { name: 'token', description: 'Personal Access Token', type: 'string', required: true },
+        ],
+      },
+      {
+        name: 'gh auth remove',
+        description: 'Remove a GitHub account',
+        usage: 'gh auth remove --account-id ID',
+        examples: ['gh auth remove --account-id personal-me'],
+        options: [
+          {
+            name: 'account-id',
+            description: 'Account ID to remove',
+            type: 'string',
+            required: true,
+          },
+        ],
+      },
+      {
+        name: 'gh auth list',
+        description: 'List configured GitHub accounts',
+        usage: 'gh auth list',
+        examples: ['gh auth list'],
+        options: [],
+      },
+      {
+        name: 'gh auth validate',
+        description: 'Validate account tokens',
+        usage: 'gh auth validate [--account-id ID]',
+        examples: ['gh auth validate'],
+        options: [
+          {
+            name: 'account-id',
+            description: 'Specific account to validate',
+            type: 'string',
+            required: false,
+          },
+        ],
+      },
+      {
+        name: 'gh repo list',
+        description: 'List repositories',
+        usage:
+          'gh repo list [--account ID] [--visibility public|private] [--language LANG] [--search QUERY]',
+        examples: ['gh repo list --account me --language typescript'],
+        options: [
+          { name: 'account', description: 'Account ID', type: 'string', required: false },
+          {
+            name: 'visibility',
+            description: 'Repository visibility',
+            type: 'string',
+            required: false,
+          },
+          { name: 'language', description: 'Filter by language', type: 'string', required: false },
+          { name: 'search', description: 'Search query', type: 'string', required: false },
+          { name: 'sort', description: 'Sort field', type: 'string', required: false },
+          { name: 'limit', description: 'Max results', type: 'number', required: false },
+        ],
+      },
+      {
+        name: 'gh repo sync',
+        description: 'Sync repositories',
+        usage: 'gh repo sync [--account ID] [--force]',
+        examples: ['gh repo sync --account me --force'],
+        options: [
+          { name: 'account', description: 'Account ID', type: 'string', required: false },
+          {
+            name: 'force',
+            description: 'Force sync even if in progress',
+            type: 'boolean',
+            required: false,
+          },
+        ],
+      },
+      {
+        name: 'gh repo show',
+        description: 'Show repository details',
+        usage: 'gh repo show --account ID --repo owner/repo',
+        examples: ['gh repo show --account me --repo owner/repo'],
+        options: [
+          { name: 'account', description: 'Account ID', type: 'string', required: true },
+          { name: 'repo', description: 'Repository (owner/repo)', type: 'string', required: true },
+        ],
+      },
+      {
+        name: 'gh issue list',
+        description: 'List issues',
+        usage:
+          'gh issue list --account ID --repo owner/repo [--state open|closed] [--labels LABELS]',
+        examples: ['gh issue list --account me --repo owner/repo --state open'],
+        options: [
+          { name: 'account', description: 'Account ID', type: 'string', required: true },
+          { name: 'repo', description: 'Repository (owner/repo)', type: 'string', required: true },
+          { name: 'state', description: 'Issue state', type: 'string', required: false },
+          { name: 'labels', description: 'Filter by labels', type: 'string', required: false },
+          { name: 'limit', description: 'Max results', type: 'number', required: false },
+        ],
+      },
+      {
+        name: 'gh issue create',
+        description: 'Create an issue',
+        usage:
+          'gh issue create --account ID --repo owner/repo --title TITLE [--body BODY] [--labels LABELS]',
+        examples: ['gh issue create --account me --repo owner/repo --title "Bug" --body "Details"'],
+        options: [
+          { name: 'account', description: 'Account ID', type: 'string', required: true },
+          { name: 'repo', description: 'Repository (owner/repo)', type: 'string', required: true },
+          { name: 'title', description: 'Issue title', type: 'string', required: true },
+          { name: 'body', description: 'Issue body', type: 'string', required: false },
+          {
+            name: 'labels',
+            description: 'Comma-separated labels',
+            type: 'string',
+            required: false,
+          },
+          {
+            name: 'assignees',
+            description: 'Comma-separated assignees',
+            type: 'string',
+            required: false,
+          },
+        ],
+      },
+      {
+        name: 'gh pr list',
+        description: 'List pull requests',
+        usage: 'gh pr list --account ID --repo owner/repo [--state open|closed]',
+        examples: ['gh pr list --account me --repo owner/repo --state open'],
+        options: [
+          { name: 'account', description: 'Account ID', type: 'string', required: true },
+          { name: 'repo', description: 'Repository (owner/repo)', type: 'string', required: true },
+          { name: 'state', description: 'PR state', type: 'string', required: false },
+          { name: 'limit', description: 'Max results', type: 'number', required: false },
+        ],
+      },
+      {
+        name: 'gh pr create',
+        description: 'Create a pull request',
+        usage:
+          'gh pr create --account ID --repo owner/repo --title TITLE --head BRANCH [--base BASE] [--body BODY]',
+        examples: [
+          'gh pr create --account me --repo owner/repo --title "Feature" --head feature-branch',
+        ],
+        options: [
+          { name: 'account', description: 'Account ID', type: 'string', required: true },
+          { name: 'repo', description: 'Repository (owner/repo)', type: 'string', required: true },
+          { name: 'title', description: 'PR title', type: 'string', required: true },
+          { name: 'head', description: 'Head branch', type: 'string', required: true },
+          { name: 'base', description: 'Base branch', type: 'string', required: false },
+          { name: 'body', description: 'PR body', type: 'string', required: false },
+          { name: 'draft', description: 'Create as draft', type: 'boolean', required: false },
+        ],
+      },
+      {
+        name: 'gh config get',
+        description: 'Get configuration',
+        usage: 'gh config get [--key KEY]',
+        examples: ['gh config get --key sidebar.width'],
+        options: [
+          {
+            name: 'key',
+            description: 'Config key (dot notation)',
+            type: 'string',
+            required: false,
+          },
+        ],
+      },
+      {
+        name: 'gh config set',
+        description: 'Set configuration',
+        usage: 'gh config set --key KEY --value VALUE',
+        examples: ['gh config set --key sidebar.width --value 400'],
+        options: [
+          { name: 'key', description: 'Config key (dot notation)', type: 'string', required: true },
+          { name: 'value', description: 'JSON value', type: 'string', required: true },
+        ],
+      },
+      {
+        name: 'gh filter set',
+        description: 'Set repository filters',
+        usage:
+          'gh filter set [--visibility public,private] [--language ts,js] [--topic cli,plugin] [--search QUERY]',
+        examples: ['gh filter set --visibility public,private --language ts,js'],
+        options: [
+          {
+            name: 'visibility',
+            description: 'Comma-separated visibility',
+            type: 'string',
+            required: false,
+          },
+          {
+            name: 'language',
+            description: 'Comma-separated languages',
+            type: 'string',
+            required: false,
+          },
+          { name: 'topic', description: 'Comma-separated topics', type: 'string', required: false },
+          { name: 'search', description: 'Search query', type: 'string', required: false },
+          {
+            name: 'account',
+            description: 'Comma-separated account IDs',
+            type: 'string',
+            required: false,
+          },
+        ],
+      },
+      {
+        name: 'gh filter clear',
+        description: 'Clear all filters',
+        usage: 'gh filter clear',
+        examples: ['gh filter clear'],
+        options: [],
+      },
+      {
+        name: 'gh stats',
+        description: 'Show GitHub statistics',
+        usage: 'gh stats',
+        examples: ['gh stats'],
+        options: [],
+      },
     ],
     sidebar: {
       enabled: true,
       defaultPosition: 'right',
       defaultWidth: 320,
     },
-    permissions: [
-      'network:github.com',
-      'storage:local',
-      'shell:exec',
-    ],
+    permissions: ['network:github.com', 'storage:local', 'shell:exec'],
   },
 };
 
@@ -152,7 +359,30 @@ export * from './core/config';
 export * from './core/sync';
 export * from './auth/manager';
 export * from './github/client';
-export { initDatabase, closeDatabase, upsertRepository, upsertRepositories, getRepositories, getRepository, deleteRepository, getRepositoriesByLanguage, searchRepositories, getRepositoryCount, getLanguages, getTopics, upsertAccount, getAccount as getStoredAccount, getAllAccounts, deleteAccount, recordSync, getSyncHistory, setMetadata, getMetadata, cleanupOldCache, vacuum } from './storage/database';
+export {
+  initDatabase,
+  closeDatabase,
+  upsertRepository,
+  upsertRepositories,
+  getRepositories,
+  getRepository,
+  deleteRepository,
+  getRepositoriesByLanguage,
+  searchRepositories,
+  getRepositoryCount,
+  getLanguages,
+  getTopics,
+  upsertAccount,
+  getAccount as getStoredAccount,
+  getAllAccounts,
+  deleteAccount,
+  recordSync,
+  getSyncHistory,
+  setMetadata,
+  getMetadata,
+  cleanupOldCache,
+  vacuum,
+} from './storage/database';
 export * from './commands';
 
 export async function runCLI(): Promise<void> {
@@ -216,7 +446,9 @@ export async function runCLI(): Promise<void> {
   }
 }
 
-async function handleAuthCommand(args: string[]): Promise<{ success: boolean; output?: string; error?: string }> {
+async function handleAuthCommand(
+  args: string[]
+): Promise<{ success: boolean; output?: string; error?: string }> {
   const subcommand = args[0];
   const parsed = parseArgs(args.slice(1));
 
@@ -240,7 +472,9 @@ async function handleAuthCommand(args: string[]): Promise<{ success: boolean; ou
   }
 }
 
-async function handleRepoCommand(args: string[]): Promise<{ success: boolean; output?: string; error?: string }> {
+async function handleRepoCommand(
+  args: string[]
+): Promise<{ success: boolean; output?: string; error?: string }> {
   const subcommand = args[0];
   const parsed = parseArgs(args.slice(1));
 
@@ -271,7 +505,9 @@ async function handleRepoCommand(args: string[]): Promise<{ success: boolean; ou
   }
 }
 
-async function handleIssueCommand(args: string[]): Promise<{ success: boolean; output?: string; error?: string }> {
+async function handleIssueCommand(
+  args: string[]
+): Promise<{ success: boolean; output?: string; error?: string }> {
   const subcommand = args[0];
   const parsed = parseArgs(args.slice(1));
 
@@ -300,7 +536,9 @@ async function handleIssueCommand(args: string[]): Promise<{ success: boolean; o
   }
 }
 
-async function handlePRCommand(args: string[]): Promise<{ success: boolean; output?: string; error?: string }> {
+async function handlePRCommand(
+  args: string[]
+): Promise<{ success: boolean; output?: string; error?: string }> {
   const subcommand = args[0];
   const parsed = parseArgs(args.slice(1));
 
@@ -329,7 +567,9 @@ async function handlePRCommand(args: string[]): Promise<{ success: boolean; outp
   }
 }
 
-async function handleConfigCommand(args: string[]): Promise<{ success: boolean; output?: string; error?: string }> {
+async function handleConfigCommand(
+  args: string[]
+): Promise<{ success: boolean; output?: string; error?: string }> {
   const subcommand = args[0];
   const parsed = parseArgs(args.slice(1));
 
@@ -345,7 +585,9 @@ async function handleConfigCommand(args: string[]): Promise<{ success: boolean; 
   }
 }
 
-async function handleFilterCommand(args: string[]): Promise<{ success: boolean; output?: string; error?: string }> {
+async function handleFilterCommand(
+  args: string[]
+): Promise<{ success: boolean; output?: string; error?: string }> {
   const subcommand = args[0];
   const parsed = parseArgs(args.slice(1));
 

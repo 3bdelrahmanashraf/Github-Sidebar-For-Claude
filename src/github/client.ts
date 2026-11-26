@@ -98,14 +98,16 @@ export class GitHubClient {
     return this.rateLimit;
   }
 
-  async *listRepositories(options: {
-    visibility?: 'all' | 'public' | 'private';
-    affiliation?: 'owner' | 'collaborator' | 'organization_member';
-    type?: 'all' | 'public' | 'private' | 'forks' | 'sources' | 'member';
-    sort?: 'created' | 'updated' | 'pushed' | 'full_name';
-    direction?: 'asc' | 'desc';
-    perPage?: number;
-  } = {}): AsyncGenerator<GitHubRepository[]> {
+  async *listRepositories(
+    options: {
+      visibility?: 'all' | 'public' | 'private';
+      affiliation?: 'owner' | 'collaborator' | 'organization_member';
+      type?: 'all' | 'public' | 'private' | 'forks' | 'sources' | 'member';
+      sort?: 'created' | 'updated' | 'pushed' | 'full_name';
+      direction?: 'asc' | 'desc';
+      perPage?: number;
+    } = {}
+  ): AsyncGenerator<GitHubRepository[]> {
     const {
       visibility = 'all',
       affiliation = 'owner',
@@ -128,13 +130,17 @@ export class GitHubClient {
     return data as unknown as GitHubRepository;
   }
 
-  async *listIssues(owner: string, repo: string, options: {
-    state?: 'open' | 'closed' | 'all';
-    labels?: string;
-    sort?: 'created' | 'updated' | 'comments';
-    direction?: 'asc' | 'desc';
-    perPage?: number;
-  } = {}): AsyncGenerator<GitHubIssue[]> {
+  async *listIssues(
+    owner: string,
+    repo: string,
+    options: {
+      state?: 'open' | 'closed' | 'all';
+      labels?: string;
+      sort?: 'created' | 'updated' | 'comments';
+      direction?: 'asc' | 'desc';
+      perPage?: number;
+    } = {}
+  ): AsyncGenerator<GitHubIssue[]> {
     const { state = 'open', labels, sort = 'updated', direction = 'desc', perPage = 100 } = options;
 
     for await (const response of this.octokit.paginate.iterator(
@@ -145,12 +151,16 @@ export class GitHubClient {
     }
   }
 
-  async *listPullRequests(owner: string, repo: string, options: {
-    state?: 'open' | 'closed' | 'all';
-    sort?: 'created' | 'updated' | 'popularity' | 'long-running';
-    direction?: 'asc' | 'desc';
-    perPage?: number;
-  } = {}): AsyncGenerator<GitHubPullRequest[]> {
+  async *listPullRequests(
+    owner: string,
+    repo: string,
+    options: {
+      state?: 'open' | 'closed' | 'all';
+      sort?: 'created' | 'updated' | 'popularity' | 'long-running';
+      direction?: 'asc' | 'desc';
+      perPage?: number;
+    } = {}
+  ): AsyncGenerator<GitHubPullRequest[]> {
     const { state = 'open', sort = 'updated', direction = 'desc', perPage = 100 } = options;
 
     for await (const response of this.octokit.paginate.iterator(
@@ -166,64 +176,106 @@ export class GitHubClient {
     return data as unknown as GitHubIssue;
   }
 
-  async getPullRequest(owner: string, repo: string, pullNumber: number): Promise<GitHubPullRequest> {
+  async getPullRequest(
+    owner: string,
+    repo: string,
+    pullNumber: number
+  ): Promise<GitHubPullRequest> {
     const { data } = await this.octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber });
     return data as unknown as GitHubPullRequest;
   }
 
-  async createIssue(owner: string, repo: string, params: {
-    title: string;
-    body?: string;
-    assignees?: string[];
-    labels?: string[];
-    milestone?: number;
-  }): Promise<GitHubIssue> {
+  async createIssue(
+    owner: string,
+    repo: string,
+    params: {
+      title: string;
+      body?: string;
+      assignees?: string[];
+      labels?: string[];
+      milestone?: number;
+    }
+  ): Promise<GitHubIssue> {
     const { data } = await this.octokit.rest.issues.create({ owner, repo, ...params });
     return data as unknown as GitHubIssue;
   }
 
-  async updateIssue(owner: string, repo: string, issueNumber: number, params: {
-    title?: string;
-    body?: string;
-    state?: 'open' | 'closed';
-    state_reason?: 'completed' | 'not_planned' | 'reopened';
-    assignees?: string[];
-    labels?: string[];
-    milestone?: number | null;
-  }): Promise<GitHubIssue> {
-    const { data } = await this.octokit.rest.issues.update({ owner, repo, issue_number: issueNumber, ...params });
+  async updateIssue(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    params: {
+      title?: string;
+      body?: string;
+      state?: 'open' | 'closed';
+      state_reason?: 'completed' | 'not_planned' | 'reopened';
+      assignees?: string[];
+      labels?: string[];
+      milestone?: number | null;
+    }
+  ): Promise<GitHubIssue> {
+    const { data } = await this.octokit.rest.issues.update({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      ...params,
+    });
     return data as unknown as GitHubIssue;
   }
 
-  async createPullRequest(owner: string, repo: string, params: {
-    title: string;
-    head: string;
-    base: string;
-    body?: string;
-    draft?: boolean;
-    maintainer_can_modify?: boolean;
-  }): Promise<GitHubPullRequest> {
+  async createPullRequest(
+    owner: string,
+    repo: string,
+    params: {
+      title: string;
+      head: string;
+      base: string;
+      body?: string;
+      draft?: boolean;
+      maintainer_can_modify?: boolean;
+    }
+  ): Promise<GitHubPullRequest> {
     const { data } = await this.octokit.rest.pulls.create({ owner, repo, ...params });
     return data as unknown as GitHubPullRequest;
   }
 
-  async updatePullRequest(owner: string, repo: string, pullNumber: number, params: {
-    title?: string;
-    body?: string;
-    state?: 'open' | 'closed';
-    base?: string;
-    maintainer_can_modify?: boolean;
-  }): Promise<GitHubPullRequest> {
-    const { data } = await this.octokit.rest.pulls.update({ owner, repo, pull_number: pullNumber, ...params });
+  async updatePullRequest(
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    params: {
+      title?: string;
+      body?: string;
+      state?: 'open' | 'closed';
+      base?: string;
+      maintainer_can_modify?: boolean;
+    }
+  ): Promise<GitHubPullRequest> {
+    const { data } = await this.octokit.rest.pulls.update({
+      owner,
+      repo,
+      pull_number: pullNumber,
+      ...params,
+    });
     return data as unknown as GitHubPullRequest;
   }
 
-  async mergePullRequest(owner: string, repo: string, pullNumber: number, options: {
-    commit_title?: string;
-    commit_message?: string;
-    merge_method?: 'merge' | 'squash' | 'rebase';
-  } = {}): Promise<{ merged: boolean; message: string }> {
-    const { data } = await this.octokit.rest.pulls.merge({ owner, repo, pull_number: pullNumber, ...options });
+  async mergePullRequest(
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    options: {
+      commit_title?: string;
+      commit_message?: string;
+      merge_method?: 'merge' | 'squash' | 'rebase';
+    } = {}
+  ): Promise<{ merged: boolean; message: string }> {
+    const { data } = await this.octokit.rest.pulls.merge({
+      owner,
+      repo,
+      pull_number: pullNumber,
+      ...options,
+    });
     return data as { merged: boolean; message: string };
   }
 
@@ -236,20 +288,28 @@ export class GitHubClient {
     }
   }
 
-  async createLabel(owner: string, repo: string, params: {
-    name: string;
-    color: string;
-    description?: string;
-  }): Promise<GitHubLabel> {
+  async createLabel(
+    owner: string,
+    repo: string,
+    params: {
+      name: string;
+      color: string;
+      description?: string;
+    }
+  ): Promise<GitHubLabel> {
     const { data } = await this.octokit.rest.issues.createLabel({ owner, repo, ...params });
     return data as unknown as GitHubLabel;
   }
 
-  async *listMilestones(owner: string, repo: string, options: {
-    state?: 'open' | 'closed' | 'all';
-    sort?: 'due_on' | 'completeness';
-    direction?: 'asc' | 'desc';
-  } = {}): AsyncGenerator<GitHubMilestone[]> {
+  async *listMilestones(
+    owner: string,
+    repo: string,
+    options: {
+      state?: 'open' | 'closed' | 'all';
+      sort?: 'due_on' | 'completeness';
+      direction?: 'asc' | 'desc';
+    } = {}
+  ): AsyncGenerator<GitHubMilestone[]> {
     const { state = 'open', sort = 'due_on', direction = 'asc' } = options;
 
     for await (const response of this.octokit.paginate.iterator(
@@ -268,11 +328,15 @@ export class GitHubClient {
     await this.octokit.rest.activity.unstarRepoForAuthenticatedUser({ owner, repo });
   }
 
-  async forkRepository(owner: string, repo: string, options?: {
-    organization?: string;
-    name?: string;
-    default_branch_only?: boolean;
-  }): Promise<GitHubRepository> {
+  async forkRepository(
+    owner: string,
+    repo: string,
+    options?: {
+      organization?: string;
+      name?: string;
+      default_branch_only?: boolean;
+    }
+  ): Promise<GitHubRepository> {
     const { data } = await this.octokit.rest.repos.createFork({ owner, repo, ...options });
     return data as unknown as GitHubRepository;
   }
@@ -305,20 +369,33 @@ export class GitHubClient {
   }
 
   private async getOpenPRCount(owner: string, repo: string): Promise<number> {
-    const { data } = await this.octokit.rest.pulls.list({ owner, repo, state: 'open', per_page: 100 });
+    const { data } = await this.octokit.rest.pulls.list({
+      owner,
+      repo,
+      state: 'open',
+      per_page: 100,
+    });
     return data.length;
   }
 
   private async getOpenIssueCount(owner: string, repo: string): Promise<number> {
-    const { data } = await this.octokit.rest.issues.listForRepo({ owner, repo, state: 'open', per_page: 100 });
+    const { data } = await this.octokit.rest.issues.listForRepo({
+      owner,
+      repo,
+      state: 'open',
+      per_page: 100,
+    });
     return data.filter(issue => !issue.pull_request).length;
   }
 
   // GraphQL queries for complex data
-  async searchRepositories(query: string, options: {
-    first?: number;
-    after?: string;
-  } = {}): Promise<{
+  async searchRepositories(
+    query: string,
+    options: {
+      first?: number;
+      after?: string;
+    } = {}
+  ): Promise<{
     repositories: GitHubRepository[];
     pageInfo: { hasNextPage: boolean; endCursor: string | null };
   }> {
@@ -337,7 +414,8 @@ export class GitHubClient {
           endCursor: string | null;
         };
       };
-    }>(`
+    }>(
+      `
       query SearchRepositories($query: String!, $first: Int, $after: String) {
         search(query: $query, type: REPOSITORY, first: $first, after: $after) {
           repositoryCount
@@ -372,7 +450,9 @@ export class GitHubClient {
           }
         }
       }
-    `, { query, first, after });
+    `,
+      { query, first, after }
+    );
 
     return {
       repositories: result.search.edges.map((e: any) => e.node),

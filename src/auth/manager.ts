@@ -3,7 +3,12 @@
  */
 
 import type { GitHubAccount, AccountType } from '../types';
-import { getConfig, addAccount, updateAccount, removeAccount as configRemoveAccount } from '../core/config';
+import {
+  getConfig,
+  addAccount,
+  updateAccount,
+  removeAccount as configRemoveAccount,
+} from '../core/config';
 import { createGitHubClient } from '../github/client';
 
 const SERVICE_NAME = 'github-sidebar-claude';
@@ -48,7 +53,9 @@ export async function validateToken(token: string): Promise<TokenValidationResul
 
     return {
       valid: true,
-      scopes: tokenInfo?.permissions ? Object.keys(tokenInfo.permissions as Record<string, unknown>) : [],
+      scopes: tokenInfo?.permissions
+        ? Object.keys(tokenInfo.permissions as Record<string, unknown>)
+        : [],
       user: {
         login: user.login,
         id: user.id,
@@ -143,7 +150,10 @@ export async function setStoredToken(accountId: string, token: string): Promise<
   }
 }
 
-export async function refreshAccountToken(accountId: string, newToken: string): Promise<AuthResult> {
+export async function refreshAccountToken(
+  accountId: string,
+  newToken: string
+): Promise<AuthResult> {
   const validation = await validateToken(newToken);
   if (!validation.valid) {
     return { success: false, error: validation.error };
@@ -155,7 +165,9 @@ export async function refreshAccountToken(accountId: string, newToken: string): 
   return { success: true };
 }
 
-export async function createAuthenticatedClient(accountId: string): Promise<ReturnType<typeof createGitHubClient> | null> {
+export async function createAuthenticatedClient(
+  accountId: string
+): Promise<ReturnType<typeof createGitHubClient> | null> {
   const config = getConfig();
   const account = config.accounts.find(a => a.id === accountId);
   if (!account) return null;

@@ -3,7 +3,14 @@
  */
 
 import type { GitHubAccount, GitHubRepository, GitHubIssue, GitHubPullRequest } from '../types';
-import { getConfig, updateConfig, addAccount, removeAccount, listAccounts, updateRepositoryFilter } from '../core/config';
+import {
+  getConfig,
+  updateConfig,
+  addAccount,
+  removeAccount,
+  listAccounts,
+  updateRepositoryFilter,
+} from '../core/config';
 import { createAuthenticatedClient } from '../auth/manager';
 import { syncAccount, isSyncInProgress } from '../core/sync';
 import { validateToken } from '../auth/manager';
@@ -15,11 +22,18 @@ export interface CommandResult {
   error?: string;
 }
 
-export async function cmdAuthAdd(args: { type: string; username: string; token: string }): Promise<CommandResult> {
+export async function cmdAuthAdd(args: {
+  type: string;
+  username: string;
+  token: string;
+}): Promise<CommandResult> {
   const { type, username, token } = args;
 
   if (!['personal', 'organization', 'enterprise'].includes(type)) {
-    return { success: false, error: 'Invalid account type. Use: personal, organization, or enterprise' };
+    return {
+      success: false,
+      error: 'Invalid account type. Use: personal, organization, or enterprise',
+    };
   }
 
   const validation = await validateToken(token);
@@ -108,9 +122,9 @@ export async function cmdAuthValidate(args: { accountId?: string }): Promise<Com
   const allValid = results.every(r => r.valid);
   return {
     success: allValid,
-    output: results.map(r =>
-      `${r.valid ? '✓' : '✗'} ${r.account} ${r.valid ? '' : `- ${r.error}`}`
-    ).join('\n'),
+    output: results
+      .map(r => `${r.valid ? '✓' : '✗'} ${r.account} ${r.valid ? '' : `- ${r.error}`}`)
+      .join('\n'),
     data: results,
   };
 }
@@ -153,10 +167,11 @@ export async function cmdRepoList(args: {
 
       if (args.search) {
         const search = args.search.toLowerCase();
-        filtered = filtered.filter(r =>
-          r.name.toLowerCase().includes(search) ||
-          r.full_name.toLowerCase().includes(search) ||
-          r.description?.toLowerCase().includes(search)
+        filtered = filtered.filter(
+          r =>
+            r.name.toLowerCase().includes(search) ||
+            r.full_name.toLowerCase().includes(search) ||
+            r.description?.toLowerCase().includes(search)
         );
       }
 
@@ -191,7 +206,10 @@ export async function cmdRepoList(args: {
   };
 }
 
-export async function cmdRepoSync(args: { account?: string; force?: boolean }): Promise<CommandResult> {
+export async function cmdRepoSync(args: {
+  account?: string;
+  force?: boolean;
+}): Promise<CommandResult> {
   const config = getConfig();
   let accounts = config.accounts;
 
@@ -226,11 +244,15 @@ export async function cmdRepoSync(args: { account?: string; force?: boolean }): 
     }
   }
 
-  const output = results.map(r =>
-    r.skipped ? `⏭ ${r.account} - ${r.reason}` :
-    r.error ? `✗ ${r.account} - ${r.error}` :
-    `✓ ${r.account} - Added: ${r.added}, Updated: ${r.updated}, Errors: ${r.errors} (${r.duration}ms)`
-  ).join('\n');
+  const output = results
+    .map(r =>
+      r.skipped
+        ? `⏭ ${r.account} - ${r.reason}`
+        : r.error
+          ? `✗ ${r.account} - ${r.error}`
+          : `✓ ${r.account} - Added: ${r.added}, Updated: ${r.updated}, Errors: ${r.errors} (${r.duration}ms)`
+    )
+    .join('\n');
 
   return { success: true, output, data: results };
 }
@@ -276,7 +298,10 @@ export async function cmdRepoShow(args: { account: string; repo: string }): Prom
 
     return { success: true, output: lines.join('\n'), data: { repository, stats } };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch repository' };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch repository',
+    };
   }
 }
 
@@ -354,7 +379,10 @@ export async function cmdIssueCreate(args: {
       data: issue,
     };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to create issue' };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create issue',
+    };
   }
 }
 
@@ -432,7 +460,10 @@ export async function cmdPRCreate(args: {
       data: pr,
     };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to create PR' };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create PR',
+    };
   }
 }
 
