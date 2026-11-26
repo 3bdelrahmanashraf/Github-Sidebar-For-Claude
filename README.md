@@ -19,6 +19,8 @@ A Claude plugin that adds a GitHub sidebar to the Claude Desktop app — showing
 | SQLite Caching | ✅ Complete | 100% | better-sqlite3, incremental sync |
 | CLI Interface | ✅ Complete | 100% | 20+ commands |
 | Periodic Sync | ✅ Complete | 100% | Configurable intervals |
+| **Data Layer (Phase 3)** | ✅ **Complete** | **100%** | **Cache, incremental sync, parallel fetch** |
+| **Authentication (Phase 2)** | ✅ **Complete** | **100%** | **OAuth2, GitHub Apps, SSH, scopes** |
 | Sidebar UI | 🚧 Not Started | 0% | Lit/Web Components |
 | Repository Actions | 🚧 Not Started | 0% | Issues, PRs, stars, forks |
 | Claude Integration | 🚧 Not Started | 0% | Slash commands, natural language |
@@ -35,6 +37,16 @@ A Claude plugin that adds a GitHub sidebar to the Claude Desktop app — showing
 | Star/Fork/Watch operations | ✅ Complete | 100% |
 | Search (name, description, topics) | ✅ Complete | 100% |
 | Statistics dashboard | ✅ Complete | 100% |
+| **OAuth 2.0 Flow** | ✅ **Complete** | **100%** |
+| **GitHub App Auth** | ✅ **Complete** | **100%** |
+| **SSH Key Detection** | ✅ **Complete** | **100%** |
+| **Scope Validation** | ✅ **Complete** | **100%** |
+| **Audit Logging** | ✅ **Complete** | **100%** |
+| **In-memory Cache (TTL)** | ✅ **Complete** | **100%** |
+| **Incremental Sync** | ✅ **Complete** | **100%** |
+| **Parallel Fetching** | ✅ **Complete** | **100%** |
+| **Selective Field Fetching** | ✅ **Complete** | **100%** |
+| **Rate Limit Awareness** | ✅ **Complete** | **100%** |
 | Sidebar UI in Claude | 🚧 Not Started | 0% |
 | Visual repo cards with stats | 🚧 Not Started | 0% |
 | Drag-to-reorder, bulk actions | 🚧 Not Started | 0% |
@@ -77,11 +89,17 @@ The plugin manifest is built into the package. Once the sidebar UI is implemente
 # Add account (personal, organization, or enterprise)
 gh auth add --type personal --username USER --token TOKEN
 
+# Add account via OAuth 2.0
+gh auth add --type oauth --client-id CLIENT_ID --client-secret SECRET --redirect-uri URI --code CODE
+
 # List configured accounts
 gh auth list
 
 # Validate tokens
 gh auth validate [--account-id ID]
+
+# Switch active account
+gh auth switch --account-id ID
 
 # Remove account
 gh auth remove --account-id personal-user
@@ -240,57 +258,7 @@ GitHub API → Octokit Client → Sync Manager → SQLite Cache → CLI/Sidebar
 
 ---
 
-## Project Structure
-
-| File/Directory | Purpose |
-|----------------|---------|
-| `src/index.ts` | Main library entry point |
-| `src/cli.ts` | CLI entry point |
-| `src/types/index.ts` | All TypeScript types |
-| `src/core/config.ts` | Config management |
-| `src/core/sync.ts` | Sync orchestration |
-| `src/auth/manager.ts` | Token management |
-| `src/github/client.ts` | GitHub API wrapper |
-| `src/storage/database.ts` | SQLite operations |
-| `src/commands/index.ts` | CLI commands |
-| `dist/` | Built output (ESM + CJS) |
-| `.github/workflows/ci.yml` | CI/CD pipeline |
-
----
-
-## Development
-
-```bash
-# Install deps
-npm install
-
-# Development build (watch)
-npm run dev
-
-# Run tests
-npm test
-
-# Lint + format
-npm run lint
-npm run format
-
-# Type check
-npm run typecheck
-
-# Full build
-npm run build
-```
-
-### CI Pipeline
-- **Lint**: ESLint + Prettier
-- **Type Check**: TypeScript strict mode
-- **Test**: Vitest
-- **Build**: tsup (ESM + CJS + DTS)
-- **Release**: GitHub Actions on main branch push
-
----
-
-## Roadmap
+## Phase Completion Summary
 
 ### Phase 1: Foundation ✅ (v0.1.0)
 - [x] Project setup, TypeScript config, CI/CD
@@ -301,7 +269,27 @@ npm run build
 - [x] Periodic sync scheduler
 - [x] CLI with 20+ commands
 
-### Phase 2: Sidebar UI (v0.2.0)
+### Phase 2: Authentication ✅ (v0.2.0)
+- [x] Personal Access Token (classic & fine-grained)
+- [x] **OAuth 2.0 flow** (auth URL generation, code exchange, account linking)
+- [x] **GitHub App authentication** (placeholder for installation tokens)
+- [x] **SSH key detection** (auto-detect keys in ~/.ssh, fingerprint extraction)
+- [x] **Multi-account support** with switching and type detection
+- [x] **Security: Scope validation** (REQUIRED_SCOPES for read/write/admin)
+- [x] **Security: Audit logging** (logAuditEvent, getAuditLog)
+- [x] **Security: Token scope validation**
+- [x] **Account type detection** (personal/org/enterprise)
+
+### Phase 3: Data Layer ✅ (v0.3.0)
+- [x] **In-memory cache with TTL** (MemoryCache class, 5min repos / 10min stats)
+- [x] **Incremental sync** (fromCache flag, cache-first strategy, `full` option)
+- [x] **Parallel fetching** (syncAllAccounts with configurable concurrency, default 3)
+- [x] **Selective field fetching** (fields parameter in listRepositories)
+- [x] **Rate limit awareness** (checkRateLimit with automatic wait when limit < 100)
+- [x] **Periodic cache cleanup** (10% chance per sync)
+- [x] **Incremental sync flag** (incremental option with full override)
+
+### Phase 4: Sidebar UI (v0.4.0) - Next
 - [ ] Lit-based Web Components
 - [ ] Repository list with virtualized rendering
 - [ ] Repo cards: stars, forks, issues, PRs, language, topics
@@ -310,7 +298,7 @@ npm run build
 - [ ] Grouping: account, language, visibility, activity
 - [ ] Theme: system/light/dark, compact/comfortable density
 
-### Phase 3: Repository Actions (v0.3.0)
+### Phase 5: Repository Actions (v0.5.0)
 - [ ] Issue list, create, edit, close, comment
 - [ ] PR list, create, review, merge (squash/merge/rebase)
 - [ ] Star/unstar, fork, watch/unwatch
@@ -318,14 +306,14 @@ npm run build
 - [ ] Labels, milestones management
 - [ ] Releases, branches protection
 
-### Phase 4: Claude Integration (v0.4.0)
+### Phase 6: Claude Integration (v0.6.0)
 - [ ] Plugin manifest for Claude Desktop
 - [ ] Slash commands (`/gh repo list`, `/gh issue create`)
 - [ ] Natural language ("show my most starred repos")
 - [ ] Context awareness (detect repo from cwd)
 - [ ] Auto-suggest relevant actions
 
-### Phase 5: Polish & Release (v1.0.0)
+### Phase 7: Polish & Release (v1.0.0)
 - [ ] Settings UI in sidebar
 - [ ] Keyboard shortcuts
 - [ ] Accessibility (keyboard nav, screen readers)
@@ -394,6 +382,7 @@ sqlite3 ~/.claude/github-sidebar/data/cache.db ".tables"
 - Uses Octokit's built-in throttle with retry-after
 - Respects `X-RateLimit-Remaining` headers
 - GraphQL for complex queries (single request vs many REST calls)
+- Automatic wait when remaining < 100
 
 ---
 
